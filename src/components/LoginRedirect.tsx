@@ -8,16 +8,14 @@ export function LoginRedirect() {
 
   useEffect(() => {
     if (user) {
-      // Redirection selon le rôle
-      if (user.role === 'organisation') {
+      // Redirect based on role
+      if (user.role === 'admin') {
         navigate('/dashboard', { replace: true });
-      } else if (user.role === ' member') {
-        navigate('/nouveau-releve', { replace: true });
       } else {
-        navigate('/mes-releves', { replace: true });
+        navigate('/dashboard', { replace: true });
       }
     }
   }, [user, navigate]);
 
-  return null; // Ce composant ne rend rien
+  return null;
 }

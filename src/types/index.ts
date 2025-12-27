@@ -1,123 +1,49 @@
-// Types pour les rôles utilisateur
-export type UserRole = 'organisation' | ' member' | 'client';
+// User roles
+export type UserRole = 'admin' | 'member' | 'viewer';
 
-// Profile utilisateur Supabase
+// User profile
 export interface UserProfile {
   id: string;
   email: string;
   role: UserRole;
-  agency_id: string | null;
+  organization_id: string | null;
+  organization_name?: string;
+  first_name?: string;
+  last_name?: string;
   created_at?: string;
   updated_at?: string;
 }
 
-// Informations utilisateur enrichies
+// Authenticated user
 export interface User {
   id: string;
   email: string;
   role: UserRole;
   organizationId: string | null;
-  agencyName?: string;
+  organizationName?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
-// Données d'un user
-export interface User {
-  firstName: string;
-  lastName: string;
-  pluriRH: string;
-}
+// Record status
+export type RecordStatus = 'pending' | 'approved' | 'rejected';
 
-// Données d'une client
-export interface Company {
-  name: string;
-  email: string;
-  contractNumber: string;
-  location: string;
-}
-
-// Heures d'une journée
-export interface DayHours {
-  date: string;
-  dayStart: string;
-  dayEnd: string;
-  nightStart: string;
-  nightEnd: string;
-  pause: number;
-}
-
-// Heures de la semaine
-export interface WeekHours {
-  monday: DayHours;
-  tuesday: DayHours;
-  wednesday: DayHours;
-  thursday: DayHours;
-  friday: DayHours;
-  saturday: DayHours;
-  sunday: DayHours;
-}
-
-// Statut de mission
-export type MissionStatus = 'Terminée' | 'En cours' | 'Suspendue';
-
-// Données du formulaire de item
-export interface TimesheetFormData {
-  user: User;
-  client: Company;
-  weekStart: string;
-  hours: WeekHours;
-  comments: string;
-  missionStatus: MissionStatus;
-}
-
-// Statut du item
-export type RecordStatus = 'waiting' | 'validated' | 'rejected' | 'ongoing';
-
-// Item complet
-export interfaceRecord {
-  id?: string;
-  user: User;
-  client: Company;
-  weekStart: string;
+// Generic record
+export interface Record {
+  id: string;
+  organization_id: string;
+  created_by: string;
+  title: string;
+  description?: string;
+  data?: any; // Flexible JSONB data
   status: RecordStatus;
-  submittedAt: string;
-  submittedBy: string;
-  organizationId: string;
-  totalHours?: string;
-  hours?: WeekHours;
-  comments?: string;
-  missionStatus?: MissionStatus;
+  created_at: string;
+  updated_at: string;
 }
 
-// Payload pour le webhook de soumission
-export interface SubmissionWebhookPayload {
-  timesheetId: string;
-  organizationId: string;
-  agencyName?: string;
-  submittedBy: string;
-  submittedAt: string;
-  releve_data: {
-    user: User;
-    client: Company;
-    weekStart: string;
-    hours: WeekHours;
-    comments: string;
-    missionStatus: MissionStatus;
-    totalHours: string;
-  };
- recipient_email: string;
-}
-
-// Payload pour le webhook de validation
-export interface ValidationWebhookPayload {
-  token: string;
-  status: 'validé' | 'rejeté';
-  comments?: string;
-  validatedBy?: string;
-  validatedAt: string;
-}
-
-// Réponse du webhook de lecture
-export interface ReadWebhookResponse {
-  success: boolean;
-  record:Record;
+// Record form data
+export interface RecordFormData {
+  title: string;
+  description?: string;
+  data?: any;
 }

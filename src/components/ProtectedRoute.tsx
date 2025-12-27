@@ -3,41 +3,34 @@ import { useAuth } from '../hooks/useAuth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('organisation' | ' member' | 'client')[];
+  allowedRoles?: ('admin' | 'member' | 'viewer')[];
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
 
-  // Afficher un loader pendant la vérification
+  // Show loader during verification
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-          <p className="text-neutral-600">Chargement...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-neutral-600">Loading...</p>
         </div>
       </div>
     );
   }
 
-  // Si pas connecté, rediriger vers login
+  // If not logged in, redirect to login
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Si des rôles sont spécifiés, vérifier que l'utilisateur a le bon rôle
+  // If roles are specified, check user has correct role
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Rediriger vers la page appropriée selon le rôle
-    if (user.role === 'organisation') {
-      return <Navigate to="/dashboard" replace />;
-    } else if (user.role === ' member') {
-      return <Navigate to="/nouveau-releve" replace />;
-    } else {
-      return <Navigate to="/login" replace />;
-    }
+    return <Navigate to="/dashboard" replace />;
   }
 
-  // Utilisateur autorisé, afficher le contenu
+  // User authorized, show content
   return <>{children}</>;
 }
