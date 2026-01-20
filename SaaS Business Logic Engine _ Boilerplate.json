@@ -1,0 +1,301 @@
+{
+  "name": "SaaS Business Logic Engine _ Boilerplate",
+  "nodes": [
+    {
+      "parameters": {
+        "tableId": "validation_tokens",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "token",
+              "fieldValue": "={{ $json.token }}"
+            },
+            {
+              "fieldId": "timesheet_id",
+              "fieldValue": "={{ $json.timesheet_id }}"
+            },
+            {
+              "fieldId": "expires_at",
+              "fieldValue": "={{ $json.expires_at }}"
+            },
+            {
+              "fieldId": "used",
+              "fieldValue": "={{ $json.used }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        208,
+        1424
+      ],
+      "id": "9588d574-c22b-4fce-9975-308180360254",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "iOTu0QoxvS48n3bb",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "##  New timesheet submission",
+        "height": 304,
+        "width": 512,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -144,
+        -96
+      ],
+      "typeVersion": 1,
+      "id": "b5bedcb3-5347-46a7-ae19-fba1788f4268",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## LOGIC: Generate validation token & prepare email",
+        "height": 304,
+        "width": 496,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        400,
+        -96
+      ],
+      "typeVersion": 1,
+      "id": "14ebf603-1afd-4ac7-9a37-01c8731feba9",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## ACTION: Send approval email with validation link",
+        "height": 304,
+        "width": 432,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        912,
+        -96
+      ],
+      "typeVersion": 1,
+      "id": "df5d2b59-2d81-4ce9-a602-169ccf97a1d2",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dacba8bf-0d94-4843-b0d4-fa87382b4bc9",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "78eacaa8-50b2-4ca2-9e91-eaaff7c0e091",
+      "name": "Webhook - Timesheet Submitted",
+      "webhookId": "dacba8bf-0d94-4843-b0d4-fa87382b4bc9"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================\n// Generate Secure Validation Token\n// ============================================\n\nconst data = $input.first().json;\n\n// Debug logging (optional - can be removed in production)\nconsole.log('🔍 Input data:', JSON.stringify(data, null, 2));\n\n// Extract required fields\nconst timesheetId = data.timesheet_id;\nconst clientEmail = data.client_email;\n\nconsole.log('📋 Timesheet ID:', timesheetId);\nconsole.log('📧 Client Email:', clientEmail);\n\n// ============================================\n// Generate Unique Token\n// Uses timestamp + random strings for uniqueness\n// ============================================\n\nconst timestamp = Date.now().toString(36);\nconst randomPart1 = Math.random().toString(36).substring(2, 15);\nconst randomPart2 = Math.random().toString(36).substring(2, 15);\nconst token = `${timestamp}-${randomPart1}-${randomPart2}`;\n\nconsole.log('✅ Token generated:', token);\n\n// ============================================\n// Create Validation URL\n// Customize this URL to match your app domain\n// ============================================\n\nconst appUrl = data.app_url || 'http://localhost:3000';  // ← Change to your domain\nconst validationUrl = `${appUrl}/validation/${token}`;\n\n// ============================================\n// Set Token Expiration\n// Default: 7 days from now\n// Adjust the number below to change expiration\n// ============================================\n\nconst expiresAt = new Date();\nexpiresAt.setDate(expiresAt.getDate() + 7);  // ← Change 7 to your desired days\n\n// ============================================\n// Return Formatted Data\n// ============================================\n\nreturn {\n  json: {\n    ...data,\n    token: token,\n    client_email: clientEmail,\n    expires_at: expiresAt.toISOString(),\n    used: false,\n    validation_url: validationUrl,\n    \n    // Additional metadata (optional)\n    token_created_at: new Date().toISOString(),\n    token_expires_in_days: 7\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        0
+      ],
+      "id": "5c199617-41bf-461e-9006-e16c7284612e",
+      "name": "Generate validation Token"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://[YOUR_SUPABASE_PROJECT_ID].co/rest/v1/validation_tokens",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "[YOUR_SUPABASE_SERVICE_ROLE_KEY]"
+            },
+            {
+              "name": "Authorization",
+              "value": "[YOUR_SUPABASE_SERVICE_ROLE_KEY]"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"token\": \"{{ $json.token }}\",\n  \"timesheet_id\": \"{{ $json.timesheet_id }}\",\n  \"client_email\": \"{{ $json.client_email }}\",\n  \"expires_at\": \"{{ $json.expires_at }}\",\n  \"used\": false\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        0
+      ],
+      "id": "cd31656f-2e0b-4410-97e2-7b3676fd96f3",
+      "name": "Save Token to database"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "sendTo": "= {{ $json.client_email }}",
+        "subject": "= Timesheet Approval Required - {{ $json.employee_name }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    body {\n      font-family: Arial, sans-serif;\n      line-height: 1.6;\n      color: #333;\n      margin: 0;\n      padding: 0;\n    }\n    .container {\n      max-width: 600px;\n      margin: 0 auto;\n      padding: 0;\n    }\n    .header {\n      background: #2563eb;\n      color: white;\n      padding: 30px 20px;\n      text-align: center;\n      border-radius: 8px 8px 0 0;\n    }\n    .header h1 {\n      margin: 0;\n      font-size: 24px;\n    }\n    .content {\n      background: #f9fafb;\n      padding: 30px 20px;\n      border-left: 1px solid #e5e7eb;\n      border-right: 1px solid #e5e7eb;\n    }\n    .details {\n      background: white;\n      padding: 20px;\n      border-radius: 8px;\n      margin: 20px 0;\n      border: 1px solid #e5e7eb;\n    }\n    .details h2 {\n      margin-top: 0;\n      color: #1f2937;\n      font-size: 18px;\n    }\n    .detail-row {\n      display: flex;\n      justify-content: space-between;\n      padding: 10px 0;\n      border-bottom: 1px solid #e5e7eb;\n    }\n    .detail-row:last-child {\n      border-bottom: none;\n    }\n    .label {\n      font-weight: bold;\n      color: #6b7280;\n    }\n    .value {\n      color: #1f2937;\n    }\n    .button {\n      display: inline-block;\n      background: #2563eb;\n      color: white;\n      padding: 14px 32px;\n      text-decoration: none;\n      border-radius: 6px;\n      font-weight: bold;\n      margin: 20px 0;\n    }\n    .footer {\n      background: #f9fafb;\n      padding: 20px;\n      text-align: center;\n      color: #6b7280;\n      font-size: 14px;\n      border-radius: 0 0 8px 8px;\n      border: 1px solid #e5e7eb;\n      border-top: none;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>[YOUR COMPANY NAME]</h1>\n    </div>\n    \n    <div class=\"content\">\n      <p>Hello,</p>\n      \n      <p><strong>{{ $json.employee_name }}</strong> has submitted a timesheet for your approval.</p>\n      \n      <div class=\"details\">\n        <h2>Timesheet Details</h2>\n        \n        <div class=\"detail-row\">\n          <span class=\"label\">Employee:</span>\n          <span class=\"value\">{{ $json.employee_name }}</span>\n        </div>\n        \n        <div class=\"detail-row\">\n          <span class=\"label\">Company:</span>\n          <span class=\"value\">{{ $json.company_name }}</span>\n        </div>\n        \n        <div class=\"detail-row\">\n          <span class=\"label\">Week starting:</span>\n          <span class=\"value\">{{ $json.week_start }}</span>\n        </div>\n        \n        <div class=\"detail-row\">\n          <span class=\"label\">Total hours:</span>\n          <span class=\"value\">{{ $json.total_hours }}h</span>\n        </div>\n      </div>\n      \n      <p style=\"text-align: center;\">\n        <a href=\"{{ $json.validation_url }}\" class=\"button\">\n          Review & Approve Timesheet\n        </a>\n      </p>\n      \n      <p style=\"font-size: 14px; color: #6b7280;\">\n        This link will expire in 7 days.<br>\n        If you didn't expect this email, please ignore it.\n      </p>\n    </div>\n    \n    <div class=\"footer\">\n      <p>\n        © {{ new Date().getFullYear() }} [YOUR COMPANY NAME]<br>\n        Powered by n8n automation\n      </p>\n    </div>\n  </div>\n</body>\n</html>\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        992,
+        0
+      ],
+      "id": "fbae0693-5a03-4017-8a99-4e3d40932354",
+      "name": "Send Approval Email",
+      "webhookId": "0490fe60-42da-48e8-aa2b-7e03362c2a5c"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "46086133-5c5e-4401-aa0f-5da9229a4dd3",
+              "name": "=timesheet_id",
+              "value": "={{ $json.body.timesheetId }}",
+              "type": "string"
+            },
+            {
+              "id": "8f0abad3-8373-4f85-babc-9f8757bc9168",
+              "name": "employee_name",
+              "value": "={{ $json.body.releve_data.employee.firstName }}{{ $json.body.releve_data.employee.lastName }}",
+              "type": "string"
+            },
+            {
+              "id": "0a3df6d7-cc5a-4276-985f-e0cedf8a4b90",
+              "name": "company_name",
+              "value": "={{ $json.body.releve_data.company.name }}",
+              "type": "string"
+            },
+            {
+              "id": "cb8038a2-8c24-45ce-962f-1f4162a9fcc5",
+              "name": "client_email",
+              "value": "={{ $json.body.client_email }}",
+              "type": "string"
+            },
+            {
+              "id": "93d9db51-a177-4904-b53f-2d467782096d",
+              "name": "week_start",
+              "value": "={{ $json.body.releve_data.weekStart }}",
+              "type": "string"
+            },
+            {
+              "id": "83e6c86a-fe3d-4cf3-a557-5f3f1c10e962",
+              "name": "total_hours",
+              "value": "={{ $json.body.releve_data.totalHours }}",
+              "type": "string"
+            },
+            {
+              "id": "bae751f3-04c5-4d18-8287-cc072a0ee603",
+              "name": "agency_id",
+              "value": "={{ $json.body.agencyId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        192,
+        0
+      ],
+      "id": "a5cf1b65-8db0-416c-800d-076ba6247d87",
+      "name": "Extraction Submission Data"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Create a row": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook - Timesheet Submitted": {
+      "main": [
+        [
+          {
+            "node": "Extraction Submission Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate validation Token": {
+      "main": [
+        [
+          {
+            "node": "Save Token to database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Token to database": {
+      "main": [
+        [
+          {
+            "node": "Send Approval Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraction Submission Data": {
+      "main": [
+        [
+          {
+            "node": "Generate validation Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "261dcc18-7c86-42c8-b469-f30ed297318a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4af540d60748980672c073be70c1195edd526da392c0d6795e9c95b1f0e03252"
+  },
+  "id": "uF5vOMSTCv07Ucq2",
+  "tags": []
+}
